@@ -18,4 +18,5 @@ after the initial configuration of your bot's credentials you'll be allright for
 `$python read.py`
 
 result example
+
 ![image](https://github.com/1ilir0lika/Dcalendar/assets/49962713/5456c87a-a2f5-4c46-9edc-d41ea77caab0)
