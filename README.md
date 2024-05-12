@@ -1,7 +1,9 @@
 ## features
-1 you can change your past choices 
-2 you can have as many participants as you want
-3 you can choose any month of any year
+1. you can change your past choices 
+2. you can have as many participants as you want
+3. you can choose any month of any year
+
+## how the bot looks   
 ![image](https://github.com/1ilir0lika/Dcalendar/assets/49962713/9d8d273d-8c3c-4846-bca2-db4b565ffce8)
 
 ## how to use
