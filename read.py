@@ -1,29 +1,34 @@
 import sqlite3
+from collections import Counter
 
 # Connect to the SQLite database
-conn = sqlite3.connect('giorni.db')
+conn = sqlite3.connect('database.db')
 c = conn.cursor()
 
-# Execute the SQL query to fetch all data
-c.execute('SELECT * FROM giorni')
+# Function to print leaderboard for each event
+def print_leaderboard_for_event(event_name, event_password):
+    c.execute("SELECT giorno FROM giorni WHERE password = ?", (event_password,))
+    days = [row[0] for row in c.fetchall()]
+    
+    if not days:
+        print(f"No days recorded for event: {event_name}")
+        return
+    
+    day_counts = Counter(days)
+    leaderboard = sorted(day_counts.items(), key=lambda x: x[1], reverse=True)
 
-# Fetch and print all data
-print("All data in 'giorni' table:")
-for row in c.fetchall():
-    print(row)
+    print(f"Leaderboard for event: {event_name}")
+    for day, count in leaderboard:
+        print(f"Day {day}: {count} times")
+    print()
 
-# Execute the SQL query to get the leaderboard
-c.execute('''
-    SELECT giorno, COUNT(*) AS count
-    FROM giorni
-    GROUP BY giorno
-    ORDER BY count DESC
-''')
+# Iterate through every event and print a leaderboard of the most common days
+c.execute("SELECT nome_evento, password FROM eventi")
+events = c.fetchall()
 
-# Fetch and print the leaderboard
-print("\nLeaderboard - Most Common Days:")
-for day in c.fetchall():
-    print("Giorno:", day[0], "- Count:", day[1])
+for event in events:
+    event_name, event_password = event
+    print_leaderboard_for_event(event_name, event_password)
 
 # Close the connection
 conn.close()
