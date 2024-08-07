@@ -19,7 +19,7 @@ def print_leaderboard_for_event(event_name, event_password):
 
     print(f"Leaderboard for event: {event_name}")
     for day, count in leaderboard:
-        print(f"Day {day}: {count} times")
+        print(f"Day {day}: {count} people")
     print()
 
 # Iterate through every event and print a leaderboard of the most common days
