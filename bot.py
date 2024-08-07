@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 import datetime
 from calendar import Calendar
+from collections import Counter
 import sqlite3
 
 today = datetime.date.today()
@@ -10,8 +11,8 @@ calendar = Calendar()
 selected_buttons = []
 userid = None
 
-app = Client("my_account")
-conn = sqlite3.connect('database.db')
+app = Client("my_bot")
+conn = sqlite3.connect('database.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS giorni(userid INTEGER, username TEXT, giorno INTEGER, password TEXT, data DATE)''')
 c.execute('''CREATE TABLE IF NOT EXISTS eventi(userid INTEGER, username TEXT, nome_evento TEXT, month_evento INTEGER, password TEXT, data DATE)''')
@@ -30,6 +31,23 @@ def get_selected_days(userid, month_event):
     c.execute("SELECT giorno FROM giorni WHERE userid = ? AND strftime('%m', data) = ?", (userid, f"{month_event:02}"))
     return [row[0] for row in c.fetchall()]
 
+async def send_leaderboard_for_event(client, user_id, event_name, event_password):
+    c.execute("SELECT giorno FROM giorni WHERE password = ?", (event_password,))
+    days = [row[0] for row in c.fetchall()]
+    
+    if not days:
+        await client.send_message(user_id, f"No days recorded for event: {event_name}")
+        return
+    
+    day_counts = Counter(days)
+    leaderboard = sorted(day_counts.items(), key=lambda x: x[1], reverse=True)
+
+    message_text = f"Leaderboard for event: {event_name}\n"
+    for day, count in leaderboard:
+        message_text += f"Day {day}: {count} times\n"
+
+    await client.send_message(user_id, message_text)
+
 @app.on_message(filters.command("start"))
 async def start(client, message):
     global selected_buttons, userid
@@ -40,7 +58,8 @@ async def start(client, message):
         "Hi, I'm a bot that helps you organize your events. Click on the button below to start.",
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Join event", callback_data="join_event"),
-              InlineKeyboardButton("Create event", callback_data="create_event")]]
+              InlineKeyboardButton("Create event", callback_data="create_event"),
+              InlineKeyboardButton("Stats", callback_data="stats")]]
         )
     )
 
@@ -57,6 +76,13 @@ async def on_button_click(client, query: CallbackQuery):
         user_states[user_id] = {'step': 'join_password'}
         await query.message.reply_text("Insert the password of the event:")
 
+    elif query.data == "stats":
+        #tells the most common days for your events
+        c.execute("SELECT nome_evento, password FROM eventi WHERE userid = ?", (user_id,))
+        events = c.fetchall()
+        for event in events:
+            event_name, event_password = event
+            await send_leaderboard_for_event(client, user_id, event_name, event_password)
     elif query.data == "send":
         await query.message.reply_text(f"You selected: {selected_buttons}\n If you want to change your selection, just type /start again.")
         username = query.from_user.username or query.from_user.first_name
